@@ -16,6 +16,16 @@ Globals:
       LogFormat: JSON
   Api:
     TracingEnabled: true
+    Auth:
+      Authorizers:
+        JWTAuthorizer:
+          FunctionArn: !GetAtt JWTAuthorizerFunction.Arn
+          Identity:
+            Header: Authorization
+            VaildationExpression: "^Bearer [-0-9a-zA-Z._]*$"
+          PayloadFormatVersion: "2.0"
+
+
 Resources:
   HelloWorldFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -35,7 +45,8 @@ Resources:
           Properties:
             Path: /generator-gif
             Method: get
-    
+            Auth:
+              Authorizer: JWTAuthorizer
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
@@ -44,6 +55,35 @@ Resources:
         Sourcemap: true
         EntryPoints:
         - app.ts
+
+
+  JWTAuthorizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: hello-world/
+      Handler: authorizer.handler
+      Runtime: nodejs22.x
+      Environment:
+        Variables:
+          JWT_SECRET: |
+            -----BEGIN PUBLIC KEY-----
+            MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAq3yid5V7wyljFoQVE6dv
+            6pHULJvuyWQthEUK1pL+YefpbvnfUXbw5f7uoGX4eHSM/jgwdG8W7H3e/WSXb3SH
+            WZmwvIpFUBGOUE5cdkjf8cLXQZCIaykMun6aZlkuBZlaTqyhuPjmAPo8DIgm6cE8
+            RayX7Fcq2VMsQ9A7PaXbXkqzbCvea5Q+WWdp6+ShxDhYNQNUWzb1WYl1L1O35eyP
+            7OWzYBcOdgMt1JbkBH5dLzC9MLqYx0GAocZU9YdpLXXY0d8fnnZnnlsQ6LRWwhAL
+            tRmLqElcdZkG8w5yzJfMBLUXUQNtDpIAXtyowt1K+HhUVtdCwN6w7+GlSRtu5Eeb
+            zwIDAQAB
+            -----END PUBLIC KEY-----
+
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2020
+        Sourcemap: true
+        EntryPoints:
+        - authorizer.ts
 
 
     
